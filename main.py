@@ -1,4 +1,3 @@
-import gc
 import uvicorn
 from fastapi import FastAPI
 
