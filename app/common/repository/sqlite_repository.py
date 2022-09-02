@@ -1,43 +1,39 @@
-from typing import Type, Generic, TypeVar, List, Dict
+from typing import Type, List, Dict
 
-from fastapi import Depends
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
-from app.common.database import get_db
-from app.common.exceptions import EntityNotFoundException
-from app.common.repository.base_repository import BaseRepository, M
-
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+from app.common.exceptions import EntityNotFoundException, ConflictException
+from app.common.repository.base_repository import BaseRepository, M, CreateSchemaType, UpdateSchemaType
 
 
-class SqliteRepository(BaseRepository[M], Generic[CreateSchemaType, UpdateSchemaType]):
+class SqliteRepository(BaseRepository[M, CreateSchemaType, UpdateSchemaType]):
     Entity: Type[M]
+    db: Session
 
-    def __init__(self, db: Session = Depends(get_db)) -> None:
-        self.db = db
-
-    def create(self, entity: CreateSchemaType) -> Entity:
+    def create(self, entity: CreateSchemaType) -> M:
         db_entity = self.Entity(**entity.dict())
-        self.db.add(db_entity)
-        self.db.commit()
-        self.db.refresh(db_entity)
+        try:
+            self.db.add(db_entity)
+            self.db.commit()
+            self.db.refresh(db_entity)
+        except IntegrityError as e:
+            raise ConflictException(str(e))
         return db_entity
 
-    def read(self, id: str) -> Entity:
+    def read(self, id: str) -> M:
         entity = self.db.query(self.Entity).filter(self.Entity.id == id).first()
         if entity is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)
         return entity
 
-    def query(self, offset: int = 0, limit: int = 20, filters: Dict = {}) -> List[Entity]:
+    def query(self, offset: int = 0, limit: int = 20, filters: Dict = {}) -> List[M]:
         query = self.db.query(self.Entity)
         for _filter, value in filters.items():
             query = query.filter(_filter == value)
         return query.offset(offset).limit(limit).all()
 
-    def update(self, id: str, entity: UpdateSchemaType) -> Entity:
+    def update(self, id: str, entity: UpdateSchemaType) -> M:
         current_data = self.db.query(self.Entity).filter(self.Entity.id == id).first()
         if current_data is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)

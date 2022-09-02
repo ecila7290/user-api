@@ -1,10 +1,13 @@
 import uvicorn
 from fastapi import FastAPI
 
+from app.common.database import Base, engine
 from app.common.config import API_V1
 from app.users.routers import user
 
 app = FastAPI(title="FastAPI User API", docs_url=f"{API_V1}/docs")
+
+Base.metadata.create_all(bind=engine)
 
 app.include_router(user.router, prefix=f"{API_V1}/users", tags=["Users"])
 
