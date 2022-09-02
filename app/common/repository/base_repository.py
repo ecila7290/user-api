@@ -1,7 +1,9 @@
 from abc import abstractmethod, ABCMeta
 from typing import Generic, List, TypeVar
 
-M = TypeVar("M")
+from app.common.database import Base
+
+M = TypeVar("M", bound=Base)
 
 
 class BaseRepository(Generic[M], metaclass=ABCMeta):
