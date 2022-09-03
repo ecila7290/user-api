@@ -1,55 +1,49 @@
-from typing import Type, Generic, TypeVar, List, Dict
+from typing import Type, List, Dict
 
-from fastapi import Depends
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
-from app.common.database import get_db
-from app.common.exceptions import EntityNotFoundException
+from app.common.exceptions import EntityNotFoundException, ConflictException
 from app.common.repository.base_repository import BaseRepository, M
 
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
-
-class SqliteRepository(BaseRepository[M], Generic[CreateSchemaType, UpdateSchemaType]):
+class SqliteRepository(BaseRepository[M]):
     Entity: Type[M]
+    db: Session
 
-    def __init__(self, db: Session = Depends(get_db)) -> None:
-        self.db = db
+    def create(self, entity: M) -> M:
+        try:
+            self.db.add(entity)
+            self.db.commit()
+            self.db.refresh(entity)
+        except IntegrityError as e:
+            raise ConflictException(str(e))
+        return entity
 
-    def create(self, entity: CreateSchemaType) -> Entity:
-        db_entity = self.Entity(**entity.dict())
-        self.db.add(db_entity)
-        self.db.commit()
-        self.db.refresh(db_entity)
-        return db_entity
-
-    def read(self, id: str) -> Entity:
+    def read(self, id: str) -> M:
         entity = self.db.query(self.Entity).filter(self.Entity.id == id).first()
         if entity is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)
         return entity
 
-    def query(self, offset: int = 0, limit: int = 20, filters: Dict = {}) -> List[Entity]:
+    def query(self, offset: int = 0, limit: int = 20, filters: Dict = {}) -> List[M]:
         query = self.db.query(self.Entity)
         for _filter, value in filters.items():
             query = query.filter(_filter == value)
         return query.offset(offset).limit(limit).all()
 
-    def update(self, id: str, entity: UpdateSchemaType) -> Entity:
-        current_data = self.db.query(self.Entity).filter(self.Entity.id == id).first()
-        if current_data is None:
+    def update(self, id: str, entity: M) -> M:
+        entity_to_update = self.db.query(self.Entity).filter(self.Entity.id == id).first()
+        if entity_to_update is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)
 
-        entity_dict = entity.dict(exclude_unset=True)
-        for key, value in entity_dict.items():
-            setattr(current_data, key, value)
+        for key, value in entity.__dict__.items():
+            setattr(entity_to_update, key, value)
 
-        self.db.add(current_data)
+        self.db.add(entity_to_update)
         self.db.commit()
-        self.db.refresh(current_data)
-        return current_data
+        self.db.refresh(entity_to_update)
+        return entity_to_update
 
     def delete(self, id: str) -> None:
         current_data = self.db.query(self.Entity).filter(self.Entity.id == id).first()
