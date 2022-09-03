@@ -11,7 +11,7 @@ from app.users.services.user import UserService
 router = APIRouter()
 
 
-@router.post("/signup")
+@router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def user_signup(user: UserCreate, db: Session = Depends(get_db)):
     verification_code = user.verification_code
     del user.verification_code

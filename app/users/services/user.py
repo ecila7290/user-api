@@ -8,5 +8,5 @@ class UserService:
         self.user_repository = user_repository
 
     def create_user(self, user: UserCreate):
-        created_user = self.user_repository.create(user)
+        created_user = self.user_repository.create(User(**user.dict()))
         return created_user

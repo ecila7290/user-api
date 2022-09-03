@@ -17,7 +17,6 @@ class UserCreate(UserBase):
     nickname: str
     password: str
     verification_code: str
-    _last_updated_at: datetime.datetime = Field(default_factory=utcnow, alias="last_updated_at")
 
 
 class UserUpdate(UserBase):
@@ -25,7 +24,6 @@ class UserUpdate(UserBase):
     password: Union[str, None] = None
     new_password: Union[str, None] = None
     is_active: Union[bool, None] = None
-    _last_updated_at: datetime.datetime = Field(default_factory=utcnow, alias="last_updated_at")
 
 
 class User(UserBase):

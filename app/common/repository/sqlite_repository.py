@@ -4,22 +4,21 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
 from app.common.exceptions import EntityNotFoundException, ConflictException
-from app.common.repository.base_repository import BaseRepository, M, CreateSchemaType, UpdateSchemaType
+from app.common.repository.base_repository import BaseRepository, M
 
 
-class SqliteRepository(BaseRepository[M, CreateSchemaType, UpdateSchemaType]):
+class SqliteRepository(BaseRepository[M]):
     Entity: Type[M]
     db: Session
 
-    def create(self, entity: CreateSchemaType) -> M:
-        db_entity = self.Entity(**entity.dict())
+    def create(self, entity: M) -> M:
         try:
-            self.db.add(db_entity)
+            self.db.add(entity)
             self.db.commit()
-            self.db.refresh(db_entity)
+            self.db.refresh(entity)
         except IntegrityError as e:
             raise ConflictException(str(e))
-        return db_entity
+        return entity
 
     def read(self, id: str) -> M:
         entity = self.db.query(self.Entity).filter(self.Entity.id == id).first()
@@ -33,19 +32,18 @@ class SqliteRepository(BaseRepository[M, CreateSchemaType, UpdateSchemaType]):
             query = query.filter(_filter == value)
         return query.offset(offset).limit(limit).all()
 
-    def update(self, id: str, entity: UpdateSchemaType) -> M:
-        current_data = self.db.query(self.Entity).filter(self.Entity.id == id).first()
-        if current_data is None:
+    def update(self, id: str, entity: M) -> M:
+        entity_to_update = self.db.query(self.Entity).filter(self.Entity.id == id).first()
+        if entity_to_update is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)
 
-        entity_dict = entity.dict(exclude_unset=True)
-        for key, value in entity_dict.items():
-            setattr(current_data, key, value)
+        for key, value in entity.__dict__.items():
+            setattr(entity_to_update, key, value)
 
-        self.db.add(current_data)
+        self.db.add(entity_to_update)
         self.db.commit()
-        self.db.refresh(current_data)
-        return current_data
+        self.db.refresh(entity_to_update)
+        return entity_to_update
 
     def delete(self, id: str) -> None:
         current_data = self.db.query(self.Entity).filter(self.Entity.id == id).first()
