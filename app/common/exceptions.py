@@ -18,3 +18,11 @@ class ConflictException(Exception):
 
     def __str__(self) -> str:
         return f"Conflict exception: {self.message}"
+
+
+class InvalidValueException(Exception):
+    def __init__(self, message) -> None:
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
