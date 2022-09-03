@@ -4,14 +4,14 @@ from sqlalchemy.orm import Session
 
 from app.common.database import get_db
 from app.common.exceptions import ConflictException
-from app.users.entities.schemas.user import UserCreate
+from app.users.entities.schemas.user import UserCreate, User
 from app.users.repositories.user_repository import UserRepository
 from app.users.services.user import UserService
 
 router = APIRouter()
 
 
-@router.post("/signup", status_code=status.HTTP_201_CREATED)
+@router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=User)
 async def user_signup(user: UserCreate, db: Session = Depends(get_db)):
     verification_code = user.verification_code
     del user.verification_code

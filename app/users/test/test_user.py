@@ -1,10 +1,9 @@
-import pytest
 from fastapi import status
 from fastapi.testclient import TestClient
 
 
 class TestUserCRUD:
-    def test_user_create_success(self, client: TestClient):
+    def test_user_create(self, client: TestClient):
         # GIVEN
         user_data = {
             "name": "testname",
@@ -22,8 +21,8 @@ class TestUserCRUD:
         # THEN
         assert response.status_code == 201
         assert created_entity.get("verification_code") is None
+        assert created_entity.get("password") is None
         assert created_entity["is_active"] is True
-        assert created_entity["password"] != "secret"
 
         # GIVEN
         duplicated_user_data = {

@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 # #this is to include backend dir in sys.path so that we can import from db,main.py
 
 from app.common.database import Base, get_db
-from app.common.config import API_V1
+from app.common.config import settings
 from app.users.routers import user
 
 
@@ -23,8 +23,8 @@ def start_app():
     return app
 
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///./test.db"
+engine = create_engine(settings.SQLALCHEMY_TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -57,6 +57,6 @@ def client(app: FastAPI, db_session: TestingSessionLocal) -> Generator[TestClien
 
     app.dependency_overrides[get_db] = _get_test_db
     with TestClient(app) as client:
-        client.base_url += API_V1
+        client.base_url += settings.API_V1
         client.base_url = client.base_url.rstrip("/") + "/"
         yield client

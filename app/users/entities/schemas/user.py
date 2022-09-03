@@ -33,8 +33,8 @@ class User(UserBase):
     nickname: str
     is_active: bool
     created_at: datetime.datetime
-    last_updated_at: datetime.datetime
-    last_signed_in_at: datetime.datetime
+    last_updated_at: Union[datetime.datetime, None]
+    last_signed_in_at: Union[datetime.datetime, None]
 
     class Config:
         # Tells the Pydantic model to read the data even if it is not a dict, but an ORM model (or any other arbitrary object with attributes).
