@@ -8,7 +8,7 @@ from app.common.utils.uuid import uuid4
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String, primary_key=True, default=uuid4(), index=True)
+    id = Column(String, primary_key=True, default=uuid4, index=True)
     name = Column(String)
     email = Column(String, unique=True, index=True)
     phone = Column(String, unique=True, index=True)
