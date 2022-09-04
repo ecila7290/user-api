@@ -39,3 +39,9 @@ class User(UserBase):
     class Config:
         # Tells the Pydantic model to read the data even if it is not a dict, but an ORM model (or any other arbitrary object with attributes).
         orm_mode = True
+
+
+class UserSignin(BaseModel):
+    email: Union[EmailStr, None]
+    nickname: Union[str, None]
+    password: str

@@ -1,6 +1,15 @@
+from re import L
 from typing import Type
 
 from app.common.repository.base_repository import M
+
+
+class BadRequestException(Exception):
+    def __init__(self, message) -> None:
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
 
 
 class EntityNotFoundException(Exception):
@@ -21,6 +30,14 @@ class ConflictException(Exception):
 
 
 class InvalidValueException(Exception):
+    def __init__(self, message) -> None:
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
+
+
+class UnauthorizedException(Exception):
     def __init__(self, message) -> None:
         self.message = message
 
