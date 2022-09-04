@@ -1,4 +1,3 @@
-from re import L
 from typing import Type
 
 from app.common.repository.base_repository import M
