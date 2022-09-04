@@ -1,11 +1,13 @@
 from fastapi import status
 from fastapi.testclient import TestClient
 
+from app.users.entities.schemas.verification import RequestPath
+
 
 class TestVerificationCRUD:
     def test_user_verification(self, client: TestClient):
         # GIVEN
-        verification_data = {"phone": "+821012345678"}
+        verification_data = {"phone": "+821012345678", "request_path": RequestPath.SIGNUP}
 
         # WHEN
         response = client.post(f"/verification", json=verification_data)
@@ -15,7 +17,7 @@ class TestVerificationCRUD:
         assert len(created_entity["code"]) == 6
 
         # GIVEN
-        invalid_verification_data = {"phone": "01012345678"}
+        invalid_verification_data = {"phone": "01012345678", "request_path": RequestPath.SIGNUP}
 
         # WHEN
         response = client.post(f"/verification", json=invalid_verification_data)
