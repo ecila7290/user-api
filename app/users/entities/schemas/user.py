@@ -8,7 +8,7 @@ from app.common.utils.uuid import uuid4
 
 
 class UserBase(BaseModel):
-    phone: str
+    phone: str = Field(example="+821012345678")
 
 
 class UserCreate(UserBase):

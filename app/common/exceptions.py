@@ -9,7 +9,7 @@ class EntityNotFoundException(Exception):
         self.entity_type = entity_type
 
     def __str__(self) -> str:
-        return f"{self.entity_type.__name__} with id: {id} does not exist."
+        return f"{self.entity_type.__name__} with id: {self.id} does not exist."
 
 
 class ConflictException(Exception):
@@ -18,3 +18,11 @@ class ConflictException(Exception):
 
     def __str__(self) -> str:
         return f"Conflict exception: {self.message}"
+
+
+class InvalidValueException(Exception):
+    def __init__(self, message) -> None:
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message

@@ -1,4 +1,4 @@
-.PHONY: init run test
+.PHONY: init run test migrate
 
 init:
 	python -m pip install --upgrade pip
@@ -9,3 +9,7 @@ run:
 
 test:
 	python -m pytest
+
+migrate:
+	alembic revision --autogenerate -m '$(msg)'
+	alembic upgrade head
