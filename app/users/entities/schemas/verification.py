@@ -1,6 +1,12 @@
+import enum
 import datetime
 
 from pydantic import BaseModel, Field
+
+
+class RequestPath(str, enum.Enum):
+    SIGNUP = "signup"
+    PASSWORD_RESET = "passwordReset"
 
 
 class VerificationBase(BaseModel):
@@ -8,7 +14,10 @@ class VerificationBase(BaseModel):
 
 
 class VerificationCreate(VerificationBase):
-    pass
+    request_path: RequestPath
+
+    class Config:
+        use_enum_values = True
 
 
 class Verification(VerificationBase):
@@ -19,3 +28,4 @@ class Verification(VerificationBase):
     class Config:
         # Tells the Pydantic model to read the data even if it is not a dict, but an ORM model (or any other arbitrary object with attributes).
         orm_mode = True
+        use_enum_values = True

@@ -16,6 +16,7 @@ router = APIRouter()
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=User)
 async def user_signup(user: UserCreate, db: Session = Depends(get_db)):
+    # 처리하기
     verification_code = user.verification_code
     del user.verification_code
     service = UserService(UserRepository(db=db))
