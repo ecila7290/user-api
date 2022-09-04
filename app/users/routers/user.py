@@ -12,7 +12,7 @@ from app.common.exceptions import (
 )
 from app.common.token_data import TokenResponse, TokenData
 from app.common.utils.token_helper import validate_token
-from app.users.entities.schemas.user import UserCreate, User, UserSignin
+from app.users.entities.schemas.user import UserCreate, User, UserSignin, UserPasswordReset
 from app.users.entities.schemas.verification import Verification, VerificationCreate
 from app.users.repositories.user_repository import UserRepository
 from app.users.repositories.verification_repository import VerificationRepository
@@ -71,3 +71,13 @@ def user_mypage(token: TokenData = Depends(validate_token), db: Session = Depend
         return service.read_user(token)
     except EntityNotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.patch("/passwordReset")
+def user_password_reset(user_info: UserPasswordReset, db: Session = Depends(get_db)):
+    service = UserService(UserRepository(db=db), VerificationRepository(db=db))
+
+    try:
+        return service.reset_password(user_info)
+    except UnauthorizedException as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))

@@ -20,9 +20,10 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(UserBase):
+    name: Union[str, None] = None
     phone: Union[str, None] = None
-    password: Union[str, None] = None
-    new_password: Union[str, None] = None
+    email: Union[EmailStr, None] = None
+    nickname: Union[str, None] = None
     is_active: Union[bool, None] = None
 
 
@@ -45,3 +46,10 @@ class UserSignin(BaseModel):
     email: Union[EmailStr, None]
     nickname: Union[str, None]
     password: str
+
+
+class UserPasswordReset(BaseModel):
+    current_password: str
+    new_password: str
+    phone: str
+    verification_code: str

@@ -7,7 +7,7 @@ from jose import jwt
 from app.common.config import settings
 from app.common.exceptions import EntityNotFoundException
 from app.common.utils.datetime_helper import utcnow
-from app.common.utils.password_helper import hash_password
+from app.common.utils.password_helper import hash_password, verify_password
 from app.common.utils.token_helper import create_access_token, validate_token
 from app.common.utils.uuid import uuid4
 from app.users.entities.schemas.verification import RequestPath
@@ -207,3 +207,64 @@ class TestUserCRUD:
 
         # THEN 존재하지 않는 유저의 토큰으로 조회
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_user_password_reset(self, client: TestClient, monkeypatch):
+        # GIVEN monkeypatch verification code
+        GET_VERIFICATION_DATA = [
+            Verification(phone="+821012345678", request_path=RequestPath.PASSWORD_RESET, code="123456", created_at=utcnow()),
+            Verification(phone="+821012345678", request_path=RequestPath.PASSWORD_RESET, code="123456", created_at=utcnow()),
+        ]
+
+        class MockVerificationRepository(VerificationRepository):
+            def query(self, **kwargs):
+                return [GET_VERIFICATION_DATA.pop(0)]
+
+        monkeypatch.setattr("app.users.routers.user.VerificationRepository", MockVerificationRepository)
+
+        # GIVEN monkeypatch user data
+        user1 = User(id=uuid4(), email="user1@email.com", nickname="user1", password=hash_password("secret"))
+        user2 = User(id=uuid4(), email="user2@email.com", nickname="user2", password=hash_password("secret"))
+        GET_USER_DATA = [
+            [user1],
+            [user2],
+        ]
+
+        class MockUserRepository(UserRepository):
+            def query(self, **kwargs):
+                return GET_USER_DATA.pop(0)
+
+            def update(self, user_id, user, **kwargs):
+                pass
+
+        monkeypatch.setattr("app.users.routers.user.UserRepository", MockUserRepository)
+
+        # GIVEN
+        user_data = {
+            "current_password": "secret",
+            "new_password": "very secret",
+            "phone": "+821012345678",
+            "verification_code": "123456",
+        }
+
+        # WHEN
+        response = client.patch(f"/passwordReset", json=user_data)
+
+        # THEN
+        assert response.status_code == status.HTTP_200_OK
+        assert verify_password("very secret", user1.password)
+        assert user1.last_updated_at is not None
+
+        # GIVEN
+        user_data = {
+            "current_password": "wrong_password",
+            "new_password": "very secret",
+            "phone": "+821012345678",
+            "verification_code": "123456",
+        }
+
+        # WHEN 현재 비밀번호를 틀린 경우
+        response = client.patch(f"/passwordReset", json=user_data)
+
+        # THEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json()["detail"] == "Incorrect id or password"
