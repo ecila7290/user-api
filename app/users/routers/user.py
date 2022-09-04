@@ -19,11 +19,13 @@ async def user_signup(user: UserCreate, db: Session = Depends(get_db)):
     # 처리하기
     verification_code = user.verification_code
     del user.verification_code
-    service = UserService(UserRepository(db=db))
+    service = UserService(UserRepository(db=db), VerificationRepository(db=db))
     try:
-        return service.create_user(user)
+        return service.create_user(user, verification_code)
     except ConflictException as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except InvalidValueException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/verification", status_code=status.HTTP_201_CREATED, response_model=Verification)
