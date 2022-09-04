@@ -117,6 +117,9 @@ class TestUserCRUD:
             def query(self, **kwargs):
                 return GET_USER_DATA.pop(0)
 
+            def update(self, user_id, user, **kwargs):
+                pass
+
         monkeypatch.setattr("app.users.routers.user.UserRepository", MockUserRepository)
 
         # GIVEN
@@ -127,7 +130,10 @@ class TestUserCRUD:
 
         # THEN
         assert response.status_code == status.HTTP_200_OK
-        assert validate_token(response.json()["access_token"]).email == "user1@email.com"
+        assert (
+            jwt.decode(response.json()["access_token"], settings.SECRET_KEY, algorithms=settings.ALGORITHM)["email"]
+            == "user1@email.com"
+        )
 
         # GIVEN
         user2_info = {"password": "secret"}
