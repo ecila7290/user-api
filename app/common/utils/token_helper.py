@@ -20,7 +20,7 @@ def create_access_token(user_data: dict):
 
 def validate_token(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
     """
-    Function that is used to validate the token in the case that it requires it
+    토큰을 검증하고 TokenData 타입으로 되돌려준다.
     """
     token = credentials.credentials
 
