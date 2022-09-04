@@ -5,8 +5,10 @@ from fastapi.testclient import TestClient
 from jose import jwt
 
 from app.common.config import settings
+from app.common.exceptions import EntityNotFoundException
 from app.common.utils.datetime_helper import utcnow
 from app.common.utils.password_helper import hash_password
+from app.common.utils.token_helper import create_access_token, validate_token
 from app.common.utils.uuid import uuid4
 from app.users.entities.schemas.verification import RequestPath
 from app.users.entities.models.user import User
@@ -124,10 +126,8 @@ class TestUserCRUD:
         response = client.post(f"/signin", json=user1_info)
 
         # THEN
-        response.status_code == status.HTTP_200_OK
-        jwt.decode(response.json()["access_token"], settings.SECRET_KEY, algorithms=settings.ALGORITHM)[
-            "email"
-        ] == "user1@email.com"
+        assert response.status_code == status.HTTP_200_OK
+        assert validate_token(response.json()["access_token"]).email == "user1@email.com"
 
         # GIVEN
         user2_info = {"password": "secret"}
@@ -136,8 +136,8 @@ class TestUserCRUD:
         response = client.post(f"/signin", json=user2_info)
 
         # THEN
-        response.status_code == status.HTTP_400_BAD_REQUEST
-        response.json()["detail"] == "Email or nickname required"
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json()["detail"] == "Email or nickname required"
 
         # GIVEN
         user3_info = {"email": "user3@test.com", "password": "wrong-password"}
@@ -146,8 +146,8 @@ class TestUserCRUD:
         response = client.post(f"/signin", json=user3_info)
 
         # THEN
-        response.status_code == status.HTTP_401_UNAUTHORIZED
-        response.json()["detail"] == "Incorrect id or password"
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json()["detail"] == "Incorrect id or password"
 
         # GIVEN
         user4_info = {"email": "non-exsiting-user@test.com", "password": "secret"}
@@ -156,5 +156,48 @@ class TestUserCRUD:
         response = client.post(f"/signin", json=user4_info)
 
         # THEN
-        response.status_code == status.HTTP_401_UNAUTHORIZED
-        response.json()["detail"] == "Incorrect id or password"
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.json()["detail"] == "Incorrect id or password"
+
+    def test_user_mypage(self, client: TestClient, monkeypatch):
+        # GIVEN monkeypatch user data
+        user = User(
+            id=uuid4(),
+            name="user1",
+            email="user1@email.com",
+            nickname="nick",
+            phone="+821012345678",
+            password=hash_password("secret"),
+            is_active=True,
+            created_at=utcnow(),
+        )
+        user_token = create_access_token({"email": user.email, "sub": user.id})
+        headers = {"Authorization": f"Bearer {user_token}"}
+        GET_USER_DATA = [user, None]
+
+        class MockUserRepository(UserRepository):
+            def read(self, **kwargs):
+                data = GET_USER_DATA.pop(0)
+                if not data:
+                    raise EntityNotFoundException(id=kwargs["id"], entity_type="User")
+                return data
+
+        monkeypatch.setattr("app.users.routers.user.UserRepository", MockUserRepository)
+
+        # WHEN
+        response = client.get("/mypage", headers=headers)
+
+        # THEN
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["id"] == user.id
+        assert "password" not in response.json()
+
+        # GIVEN
+        fake_user_token = create_access_token({"email": "fake_user@email.com", "sub": "wrong_id"})
+        headers = {"Authorization": f"Bearer {fake_user_token}"}
+
+        # WHEN
+        response = client.get("/mypage", headers=headers)
+
+        # THEN 존재하지 않는 유저의 토큰으로 조회
+        assert response.status_code == status.HTTP_404_NOT_FOUND

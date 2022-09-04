@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import List
 
 from app.common.exceptions import InvalidValueException, EntityNotFoundException, UnauthorizedException, BadRequestException
-from app.common.token_data import TokenResponse
+from app.common.token_data import TokenResponse, TokenData
 from app.common.utils.password_helper import hash_password, verify_password
 from app.common.utils.datetime_helper import utcnow
 from app.common.utils.token_helper import create_access_token
@@ -42,9 +42,19 @@ class UserService:
 
         if not (user and verify_password(password, user[0].password)):
             raise UnauthorizedException("Incorrect id or password")
+        user = user[0]
+        access_token = create_access_token({"email": user.email, "sub": user.id})
 
-        access_token = create_access_token({"email": user[0].email, "sub": user[0].id})
+        user.last_signed_in_at = utcnow()
+        self.user_repository.update(user.id, user)
         return TokenResponse(access_token=access_token)
+
+    def read_user(self, token: TokenData):
+        try:
+            user = self.user_repository.read(id=token.sub)
+        except EntityNotFoundException as e:
+            raise e
+        return user
 
 
 def validate_code(verification: List[Verification], input: str):

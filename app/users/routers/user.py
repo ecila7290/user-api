@@ -23,7 +23,7 @@ router = APIRouter()
 
 
 @router.post("/signup", status_code=status.HTTP_201_CREATED, response_model=User)
-async def user_signup(user: UserCreate, db: Session = Depends(get_db)):
+def user_signup(user: UserCreate, db: Session = Depends(get_db)):
     verification_code = user.verification_code
     del user.verification_code
 
@@ -40,7 +40,7 @@ async def user_signup(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/verification", status_code=status.HTTP_201_CREATED, response_model=Verification)
-async def user_verification(verification: VerificationCreate, db: Session = Depends(get_db)):
+def user_verification(verification: VerificationCreate, db: Session = Depends(get_db)):
 
     service = VerificationService(VerificationRepository(db=db))
 
@@ -53,7 +53,7 @@ async def user_verification(verification: VerificationCreate, db: Session = Depe
 
 
 @router.post("/signin", response_model=TokenResponse)
-async def user_signin(signin_info: UserSignin, db: Session = Depends(get_db)):
+def user_signin(signin_info: UserSignin, db: Session = Depends(get_db)):
     service = UserService(UserRepository(db=db))
 
     try:
@@ -62,3 +62,12 @@ async def user_signin(signin_info: UserSignin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except BadRequestException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+@router.get("/mypage", response_model=User)
+def user_mypage(token: TokenData = Depends(validate_token), db: Session = Depends(get_db)):
+    service = UserService(UserRepository(db=db))
+    try:
+        return service.read_user(token)
+    except EntityNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

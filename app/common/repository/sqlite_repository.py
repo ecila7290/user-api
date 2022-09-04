@@ -9,7 +9,7 @@ from app.common.exceptions import EntityNotFoundException, ConflictException
 from app.common.repository.base_repository import BaseRepository, M
 
 # TODO: sqlite에 timezone aware한 형태로 저장하려 했으나 불가능하여
-# 엔티티를 반환할 때 datetime을 timezone aware하게 만들어서 반환하도록 함 추후 수정 필요.
+# 엔티티를 반환할 때 모든 datetime을 timezone aware하게 만들어서 반환하도록 함 추후 수정 필요.
 class SqliteRepository(BaseRepository[M]):
     Entity: Type[M]
     db: Session
@@ -58,7 +58,7 @@ class SqliteRepository(BaseRepository[M]):
         if entity_to_update is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)
 
-        for key, value in entity.__dict__.items().items():
+        for key, value in entity.__dict__.items():
             setattr(entity_to_update, key, value)
 
         self.db.add(entity_to_update)
