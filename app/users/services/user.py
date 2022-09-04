@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import List
 
 from app.common.exceptions import InvalidValueException, EntityNotFoundException
 from app.common.utils.password_helper import hash_password
@@ -22,10 +23,8 @@ class UserService:
         code_in_db = self.verification_repository.query(
             limit=1, filters={"phone": user.phone, "request_path": RequestPath.SIGNUP}, sort=["-created_at"]
         )
-        if not code_in_db:
-            raise EntityNotFoundException(id=None, entity_type=Verification)
 
-        validate_code(code_in_db[0], verification_code)
+        validate_code(code_in_db, verification_code)
 
         hashed_password = hash_password(user.password)
         user.password = hashed_password
@@ -33,8 +32,10 @@ class UserService:
         return created_user
 
 
-def validate_code(verification: Verification, input: str):
-    if input != verification.code:
+def validate_code(verification: List[Verification], input: str):
+    if not verification:
+        raise EntityNotFoundException(id=None, entity_type=Verification)
+    if input != verification[0].code:
         raise InvalidValueException(f"Incorrect verification code: {input}")
-    elif (utcnow() - verification.created_at) > timedelta(seconds=THREE_MINUTES_IN_SEC):
+    elif (utcnow() - verification[0].created_at) > timedelta(seconds=THREE_MINUTES_IN_SEC):
         raise InvalidValueException(f"Code Expired")

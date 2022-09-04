@@ -3,7 +3,7 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 
 from app.common.database import get_db
-from app.common.exceptions import ConflictException, InvalidValueException
+from app.common.exceptions import ConflictException, InvalidValueException, EntityNotFoundException
 from app.users.entities.schemas.user import UserCreate, User
 from app.users.entities.schemas.verification import Verification, VerificationCreate
 from app.users.repositories.user_repository import UserRepository
@@ -26,6 +26,8 @@ async def user_signup(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except InvalidValueException as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except EntityNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.post("/verification", status_code=status.HTTP_201_CREATED, response_model=Verification)
