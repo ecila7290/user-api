@@ -104,7 +104,7 @@ $ curl -XPOST -H "Content-type: application/json" -d '{
 
 ## Modeling
 
-## User
+### User
 
 | Field                 | Description              | Type       | Default    | Example             |
 | --------------------- | ------------------------ | ---------- | ---------- | ------------------- |
