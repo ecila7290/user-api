@@ -54,6 +54,9 @@ def user_verification(verification: VerificationCreate, db: Session = Depends(ge
 
 @router.post("/signin", status_code=status.HTTP_201_CREATED, response_model=TokenResponse)
 def user_signin(signin_info: UserSignin, db: Session = Depends(get_db)):
+    """로그인 API 입니다.
+    이메일, 닉네임, 핸드폰 번호 중 하나로 로그인이 가능합니다.
+    """
     service = UserService(UserRepository(db=db))
 
     try:

@@ -96,6 +96,39 @@ $ curl -XPOST -H "Content-type: application/json" -d '{
 
 응답에서 나온 phone과 code 값을 API의 request body에 넣어줍니다.
 
+## Modeling
+
+## User
+
+| Field                 | Description              | Type       | Default    | Example             |
+| --------------------- | ------------------------ | ---------- | ---------- | ------------------- |
+| **id**                | Unique ID                | `string`   | _auto_     | -                   |
+| **name**              | 회원 이름                | `string`   | _required_ | "홍길동"            |
+| **created_at**        | 회원가입 일시            | `DATETIME` | _auto_     | 2022-08-29 16:55:04 |
+| **last_updated_at**   | 회원 정보 수정 일시      | `DATETIME` | `null`     | 2022-08-29 16:55:04 |
+| **last_signed_in_at** | 마지막 로그인 일시       | `DATETIME` | `null`     | 2022-08-29 16:55:04 |
+| **email**             | 회원의 email             | `string`   | _required_ | "old-wood"          |
+| **phone**             | 회원의 핸드폰 번호       | `string`   | _required_ | "+821012345678"     |
+| **password**          | 회원의 비밀번호\*        | `string`   | _required_ | "secret"            |
+| **is_active**         | 활성화된 사용자인지 확인 | `bool`     | `true`     | `false`             |
+
+\* 데이터베이스에 저장될 때는 bcrypt로 해싱된 비밀번호가 저장됨
+<br>
+<br>
+
+### Verification
+
+| Field            | Description                                         | Type       | Default    | Example             |
+| ---------------- | --------------------------------------------------- | ---------- | ---------- | ------------------- |
+| **id**           | Unique ID                                           | `string`   | _auto_     | -                   |
+| **phone**        | 회원의 핸드폰 번호                                  | `string`   | _required_ | "+821012345678"     |
+| **code**         | 인증번호                                            | `string`   | _auto_     | "135790"            |
+| **created_at**   | 인증번호 생성 일시                                  | `DATETIME` | `null`     | 2022-08-29 16:55:04 |
+| **request_path** | 요청이 온 url path. <br>`signup` \| `passwordReset` | `enum`     | _required_ |
+
+<br>
+<br>
+
 ## 기능 요구사항 중 최종 구현된 범위
 
 - [x] 회원 가입 기능
@@ -113,3 +146,8 @@ $ curl -XPOST -H "Content-type: application/json" -d '{
 
   - [x] 로그인되어 있지 않은 상태에서 비밀번호 재설정 가능
   - [x] 전화번호 인증 후 재설정 가능
+
+## 특별히 신경 쓴 부분
+
+- 확장 가능한 프로젝트 구조
+- 어떤 Database를 사용해도 유연하게 변경할 수 있는 repository
