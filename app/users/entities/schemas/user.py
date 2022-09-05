@@ -1,10 +1,7 @@
 import datetime
 from typing import Union
 
-from pydantic import BaseModel, EmailStr, Field, PrivateAttr
-
-from app.common.utils.datetime_helper import utcnow
-from app.common.utils.uuid import uuid4
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 class UserBase(BaseModel):
@@ -17,6 +14,11 @@ class UserCreate(UserBase):
     nickname: str
     password: str
     verification_code: str
+
+    @validator("nickname")
+    def nickname_alphanumeric(cls, v):
+        assert v.isalnum()
+        return v
 
 
 class UserUpdate(UserBase):
@@ -43,8 +45,7 @@ class User(UserBase):
 
 
 class UserSignin(BaseModel):
-    email: Union[EmailStr, None]
-    nickname: Union[str, None]
+    signin_id: Union[EmailStr, str] = Field(example="+821012345678 OR user@example.com OR somenickname12")
     password: str
 
 

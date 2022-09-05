@@ -52,7 +52,7 @@ def user_verification(verification: VerificationCreate, db: Session = Depends(ge
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.post("/signin", response_model=TokenResponse)
+@router.post("/signin", status_code=status.HTTP_201_CREATED, response_model=TokenResponse)
 def user_signin(signin_info: UserSignin, db: Session = Depends(get_db)):
     service = UserService(UserRepository(db=db))
 

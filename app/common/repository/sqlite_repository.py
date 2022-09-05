@@ -1,7 +1,7 @@
 import datetime
 from typing import Type, List, Dict
 
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -35,17 +35,26 @@ class SqliteRepository(BaseRepository[M]):
                 setattr(entity, field, value.replace(tzinfo=datetime.timezone.utc))
         return entity
 
-    def query(self, offset: int = 0, limit: int = 20, filters: Dict = {}, sort: List[str] = []) -> List[M]:
+    def query(
+        self, offset: int = 0, limit: int = 20, filters: Dict = {}, sort: List[str] = [], is_or: bool = False
+    ) -> List[M]:
         query = self.db.query(self.Entity)
         if filters:
-            for _filter, value in filters.items():
-                query = query.filter(getattr(self.Entity, _filter) == value)
+            if is_or:
+                conditions = []
+                for _filter, value in filters.items():
+                    conditions.append(getattr(self.Entity, _filter) == value)
+                query = query.filter(or_(*conditions))
+            else:
+                for _filter, value in filters.items():
+                    query = query.filter(getattr(self.Entity, _filter) == value)
         if sort:
             for field in sort:
                 if field.startswith("-"):
                     query = query.order_by(desc(field[1:]))
                 else:
                     query = query.order_by(field)
+
         entities = query.offset(offset).limit(limit).all()
         for entity in entities:
             for field, value in entity.__dict__.items():
