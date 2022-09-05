@@ -61,6 +61,10 @@ FastAPI에서 기본적으로 제공하는 Swagger를 사용합니다.
 
 회원가입을 위해 인증번호가 필요하므로 먼저 `/api/v1/users/verification`를 호출합니다.
 
+> ⚠️ 인증번호는 3 분간 유효합니다.
+
+> ⚠️ 전화번호는 [E.164](https://en.wikipedia.org/wiki/E.164) 포맷에 맞추어 입력해야 합니다.
+
 ```bash
 # 호출 예시
 $ curl -XPOST -H "Content-type: application/json" -d '{
@@ -88,6 +92,8 @@ $ curl -XPOST -H "Content-type: application/json" -d '{
 ### /api/v1/users/mypage
 
 `/users/signin`에서 로그인 후 발행되는 access token을 Authorization header 넣어주어야 합니다.
+
+> ⚠️ 토큰은 1 시간 동안 유효합니다.
 
 ### /api/v1/users/passwordReset
 
@@ -133,21 +139,21 @@ $ curl -XPOST -H "Content-type: application/json" -d '{
 
 - [x] 회원 가입 기능
 
-  - [x] 전화번호 인증 후 가입 가능
+  - [x] 전화번호 인증 후 가입
 
 - [x] 로그인 기능
 
-  - [x] 식별 가능한 모든 정보로 로그인 가능
-  - [x] 닉네임, 이메일과 비밀번호를 사용해 로그인 가능
+  - [x] 식별 가능한 모든 정보로 로그인
+  - [x] 닉네임, 이메일과 비밀번호를 사용해 로그인
 
 - [x] 내 정보 보기 기능
 
 - [x] 비밀번호 찾기(재설정) 기능
 
-  - [x] 로그인되어 있지 않은 상태에서 비밀번호 재설정 가능
-  - [x] 전화번호 인증 후 재설정 가능
+  - [x] 로그인되어 있지 않은 상태에서 비밀번호 재설정
+  - [x] 전화번호 인증 후 재설정
 
 ## 특별히 신경 쓴 부분
 
 - 확장 가능한 프로젝트 구조
-- 어떤 Database를 사용해도 유연하게 변경할 수 있는 repository
+- 어떤 Database를 사용해도 유연하게 변경할 수 있는 repository (app/common/repository 에서 확인 가능합니다.)
