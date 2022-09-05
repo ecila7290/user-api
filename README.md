@@ -87,17 +87,17 @@ $ curl -XPOST -H "Content-type: application/json" -d '{
 
 ### /api/v1/users/signin
 
-`/users/signup`에서 회원가입을 한 후에 진행이 가능합니다.
+`/api/v1/users/signup`에서 회원가입을 한 후에 진행이 가능합니다.
 
 ### /api/v1/users/mypage
 
-`/users/signin`에서 로그인 후 발행되는 access token을 Authorization header 넣어주어야 합니다.
+`/api/v1/users/signin`에서 로그인 후 발행되는 access token을 Authorization header에 넣어주어야 합니다.
 
 > ⚠️ 토큰은 1 시간 동안 유효합니다.
 
 ### /api/v1/users/passwordReset
 
-`/users/signup`에서 회원가입을 한 후에 진행이 가능합니다.
+`/api/v1/users/signup`에서 회원가입을 한 후에 진행이 가능합니다.
 비밀번호 재설정을 위해 인증번호가 필요하므로 회원가입과 동일하게 `/api/v1/users/verification`를 호출합니다.
 
 응답에서 나온 phone과 code 값을 API의 request body에 넣어줍니다.
@@ -129,7 +129,7 @@ $ curl -XPOST -H "Content-type: application/json" -d '{
 | **id**           | Unique ID                                           | `string`   | _auto_     | -                   |
 | **phone**        | 회원의 핸드폰 번호                                  | `string`   | _required_ | "+821012345678"     |
 | **code**         | 인증번호                                            | `string`   | _auto_     | "135790"            |
-| **created_at**   | 인증번호 생성 일시                                  | `DATETIME` | `null`     | 2022-08-29 16:55:04 |
+| **created_at**   | 인증번호 생성 일시                                  | `DATETIME` | _auto_     | 2022-08-29 16:55:04 |
 | **request_path** | 요청이 온 url path. <br>`signup` \| `passwordReset` | `enum`     | _required_ |
 
 <br>
