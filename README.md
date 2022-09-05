@@ -14,7 +14,7 @@
 
 ## Start Guide
 
-- 이 repository를 클론하거나 zip 파일을 다운받아 압축을 풀어 사용합니다.
+- 현재 repository를 클론하거나 zip 파일을 다운받아 압축을 풀어 사용합니다.
 
 - 개발 환경 세팅
 
