@@ -34,11 +34,12 @@ class UserService:
         return created_user
 
     def signin_user(self, signin_info: UserSignin):
-        if not (signin_info.email or signin_info.nickname):
-            raise BadRequestException("Email or nickname required")
         password = signin_info.password
-        del signin_info.password
-        user = self.user_repository.query(limit=1, filters=signin_info.dict(exclude_unset=True))
+        user = self.user_repository.query(
+            limit=1,
+            filters={"email": signin_info.signin_id, "phone": signin_info.signin_id, "nickname": signin_info.signin_id},
+            is_or=True,
+        )
 
         if not (user and verify_password(password, user[0].password)):
             raise UnauthorizedException("Incorrect id or password")

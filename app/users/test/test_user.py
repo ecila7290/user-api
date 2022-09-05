@@ -123,13 +123,13 @@ class TestUserCRUD:
         monkeypatch.setattr("app.users.routers.user.UserRepository", MockUserRepository)
 
         # GIVEN
-        user1_info = {"email": "user@test.com", "password": "secret"}
+        user1_info = {"signin_id": "user@test.com", "password": "secret"}
 
         # WHEN
         response = client.post(f"/signin", json=user1_info)
 
         # THEN
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_201_CREATED
         assert (
             jwt.decode(response.json()["access_token"], settings.SECRET_KEY, algorithms=settings.ALGORITHM)["email"]
             == "user1@email.com"
@@ -138,15 +138,14 @@ class TestUserCRUD:
         # GIVEN
         user2_info = {"password": "secret"}
 
-        # WHEN email && nickname 둘 다 없는 경우
+        # WHEN signin_id 입력하지 않은 경우
         response = client.post(f"/signin", json=user2_info)
 
         # THEN
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.json()["detail"] == "Email or nickname required"
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
         # GIVEN
-        user3_info = {"email": "user3@test.com", "password": "wrong-password"}
+        user3_info = {"signin_id": "user3@test.com", "password": "wrong-password"}
 
         # WHEN 비밀번호가 틀린 경우
         response = client.post(f"/signin", json=user3_info)
@@ -156,7 +155,7 @@ class TestUserCRUD:
         assert response.json()["detail"] == "Incorrect id or password"
 
         # GIVEN
-        user4_info = {"email": "non-exsiting-user@test.com", "password": "secret"}
+        user4_info = {"signin_id": "non-exsiting-user@test.com", "password": "secret"}
 
         # WHEN 존재하지 않는 사용자
         response = client.post(f"/signin", json=user4_info)
