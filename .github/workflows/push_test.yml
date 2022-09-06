@@ -1,0 +1,26 @@
+name: Test an application per every push
+
+on: push
+
+jobs:
+  test:
+    name: Test an application
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Initialize project
+        run: make init
+
+      - name: Unit tests
+        run: make test

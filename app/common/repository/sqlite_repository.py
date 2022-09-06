@@ -1,55 +1,82 @@
-from typing import Type, Generic, TypeVar, List, Dict
+import datetime
+from typing import Type, List, Dict
 
-from fastapi import Depends
-from pydantic import BaseModel
+from sqlalchemy import desc, or_
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
-from app.common.database import get_db
-from app.common.exceptions import EntityNotFoundException
+from app.common.exceptions import EntityNotFoundException, ConflictException
 from app.common.repository.base_repository import BaseRepository, M
 
-CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
-UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
-
-
-class SqliteRepository(BaseRepository[M], Generic[CreateSchemaType, UpdateSchemaType]):
+# TODO: sqlite에 timezone aware한 형태로 저장하려 했으나 불가능하여
+# 엔티티를 반환할 때 모든 datetime을 timezone aware하게 만들어서 반환하도록 함 추후 수정 필요.
+class SqliteRepository(BaseRepository[M]):
     Entity: Type[M]
+    db: Session
 
-    def __init__(self, db: Session = Depends(get_db)) -> None:
-        self.db = db
+    def create(self, entity: M) -> M:
+        try:
+            self.db.add(entity)
+            self.db.commit()
+            self.db.refresh(entity)
+        except IntegrityError as e:
+            raise ConflictException(str(e))
+        for field, value in entity.__dict__.items():
+            if type(value) is datetime.datetime:
+                setattr(entity, field, value.replace(tzinfo=datetime.timezone.utc))
+        return entity
 
-    def create(self, entity: CreateSchemaType) -> Entity:
-        db_entity = self.Entity(**entity.dict())
-        self.db.add(db_entity)
-        self.db.commit()
-        self.db.refresh(db_entity)
-        return db_entity
-
-    def read(self, id: str) -> Entity:
+    def read(self, id: str) -> M:
         entity = self.db.query(self.Entity).filter(self.Entity.id == id).first()
         if entity is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)
+        for field, value in entity.__dict__.items():
+            if type(value) is datetime.datetime:
+                setattr(entity, field, value.replace(tzinfo=datetime.timezone.utc))
         return entity
 
-    def query(self, offset: int = 0, limit: int = 20, filters: Dict = {}) -> List[Entity]:
+    def query(
+        self, offset: int = 0, limit: int = 20, filters: Dict = {}, sort: List[str] = [], is_or: bool = False
+    ) -> List[M]:
         query = self.db.query(self.Entity)
-        for _filter, value in filters.items():
-            query = query.filter(_filter == value)
-        return query.offset(offset).limit(limit).all()
+        if filters:
+            if is_or:
+                conditions = []
+                for _filter, value in filters.items():
+                    conditions.append(getattr(self.Entity, _filter) == value)
+                query = query.filter(or_(*conditions))
+            else:
+                for _filter, value in filters.items():
+                    query = query.filter(getattr(self.Entity, _filter) == value)
+        if sort:
+            for field in sort:
+                if field.startswith("-"):
+                    query = query.order_by(desc(field[1:]))
+                else:
+                    query = query.order_by(field)
 
-    def update(self, id: str, entity: UpdateSchemaType) -> Entity:
-        current_data = self.db.query(self.Entity).filter(self.Entity.id == id).first()
-        if current_data is None:
+        entities = query.offset(offset).limit(limit).all()
+        for entity in entities:
+            for field, value in entity.__dict__.items():
+                if type(value) is datetime.datetime:
+                    setattr(entity, field, value.replace(tzinfo=datetime.timezone.utc))
+        return entities
+
+    def update(self, id: str, entity: M) -> M:
+        entity_to_update = self.db.query(self.Entity).filter(self.Entity.id == id).first()
+        if entity_to_update is None:
             raise EntityNotFoundException(id=id, entity_type=self.Entity)
 
-        entity_dict = entity.dict(exclude_unset=True)
-        for key, value in entity_dict.items():
-            setattr(current_data, key, value)
+        for key, value in entity.__dict__.items():
+            setattr(entity_to_update, key, value)
 
-        self.db.add(current_data)
+        self.db.add(entity_to_update)
         self.db.commit()
-        self.db.refresh(current_data)
-        return current_data
+        self.db.refresh(entity_to_update)
+        for field, value in entity_to_update.__dict__.items():
+            if type(value) is datetime.datetime:
+                setattr(entity_to_update, field, value.replace(tzinfo=datetime.timezone.utc))
+        return entity_to_update
 
     def delete(self, id: str) -> None:
         current_data = self.db.query(self.Entity).filter(self.Entity.id == id).first()

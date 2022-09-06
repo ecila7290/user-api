@@ -1,22 +1,31 @@
+import enum
 import datetime
 
 from pydantic import BaseModel, Field
 
-from app.common.utils.datetime_helper import utcnow
-from app.common.utils.uuid import uuid4
+
+class RequestPath(str, enum.Enum):
+    SIGNUP = "signup"
+    PASSWORD_RESET = "passwordReset"
 
 
 class VerificationBase(BaseModel):
-    code: str
+    phone: str = Field(example="+821012345678")
 
 
 class VerificationCreate(VerificationBase):
-    id: str = Field(default_factory=uuid4)
-    code: str
-    phone: str
-    created_at: datetime.datetime = Field(default_factory=utcnow)
+    request_path: RequestPath
 
-    def __setattr__(self, name: str, value: any) -> None:
-        if name in {"id", "created_at"}:
-            raise AttributeError(f"Cannot assign new value for {name!r}")
-        super().__setattr__(name, value)
+    class Config:
+        use_enum_values = True
+
+
+class Verification(VerificationBase):
+    id: str
+    code: str
+    created_at: datetime.datetime
+
+    class Config:
+        # Tells the Pydantic model to read the data even if it is not a dict, but an ORM model (or any other arbitrary object with attributes).
+        orm_mode = True
+        use_enum_values = True
